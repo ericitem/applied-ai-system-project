@@ -1,19 +1,19 @@
-id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness
-1,Sunrise City,Neon Echo,pop,happy,0.82,118,0.84,0.79,0.18
-2,Midnight Coding,LoRoom,lofi,chill,0.42,78,0.56,0.62,0.71
-3,Storm Runner,Voltline,rock,intense,0.91,152,0.48,0.66,0.10
-4,Library Rain,Paper Lanterns,lofi,chill,0.35,72,0.60,0.58,0.86
-5,Gym Hero,Max Pulse,pop,intense,0.93,132,0.77,0.88,0.05
-6,Spacewalk Thoughts,Orbit Bloom,ambient,chill,0.28,60,0.65,0.41,0.92
-7,Coffee Shop Stories,Slow Stereo,jazz,relaxed,0.37,90,0.71,0.54,0.89
-8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22
-9,Focus Flow,LoRoom,lofi,focused,0.40,80,0.59,0.60,0.78
-10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35
-11,Golden Hour,Ray Sol,r&b,romantic,0.65,95,0.72,0.71,0.48
-12,Digital Dreams,Byte Wave,electronic,energetic,0.88,128,0.63,0.85,0.04
-13,Mountain Echo,Blue Ridge,country,nostalgic,0.52,100,0.74,0.63,0.76
-14,Deep Blue,Sable Keys,jazz,melancholic,0.31,68,0.38,0.47,0.88
-15,Thunder Fist,Iron Veil,metal,intense,0.97,168,0.35,0.58,0.06
-16,Velvet Morning,Mara Cole,r&b,relaxed,0.44,82,0.76,0.59,0.62
-17,Concrete Jungle,Grid King,hip-hop,energetic,0.79,96,0.60,0.83,0.12
-18,Pine & Rain,Willow Creek,folk,sad,0.33,72,0.32,0.45,0.94
+id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness,popularity,release_decade,instrumentalness,loudness,speechiness
+1,Sunrise City,Neon Echo,pop,happy,0.82,118,0.84,0.79,0.18,75,2020,0.05,0.78,0.06
+2,Midnight Coding,LoRoom,lofi,chill,0.42,78,0.56,0.62,0.71,45,2020,0.85,0.35,0.04
+3,Storm Runner,Voltline,rock,intense,0.91,152,0.48,0.66,0.10,60,2010,0.08,0.88,0.05
+4,Library Rain,Paper Lanterns,lofi,chill,0.35,72,0.60,0.58,0.86,40,2020,0.90,0.30,0.03
+5,Gym Hero,Max Pulse,pop,intense,0.93,132,0.77,0.88,0.05,80,2020,0.04,0.92,0.08
+6,Spacewalk Thoughts,Orbit Bloom,ambient,chill,0.28,60,0.65,0.41,0.92,30,2010,0.95,0.22,0.02
+7,Coffee Shop Stories,Slow Stereo,jazz,relaxed,0.37,90,0.71,0.54,0.89,35,2000,0.60,0.32,0.05
+8,Night Drive Loop,Neon Echo,synthwave,moody,0.75,110,0.49,0.73,0.22,55,2020,0.70,0.72,0.04
+9,Focus Flow,LoRoom,lofi,focused,0.40,80,0.59,0.60,0.78,50,2020,0.88,0.38,0.03
+10,Rooftop Lights,Indigo Parade,indie pop,happy,0.76,124,0.81,0.82,0.35,65,2020,0.06,0.73,0.05
+11,Golden Hour,Ray Sol,r&b,romantic,0.65,95,0.72,0.71,0.48,70,2020,0.10,0.62,0.08
+12,Digital Dreams,Byte Wave,electronic,energetic,0.88,128,0.63,0.85,0.04,72,2020,0.75,0.85,0.04
+13,Mountain Echo,Blue Ridge,country,nostalgic,0.52,100,0.74,0.63,0.76,55,2010,0.15,0.50,0.06
+14,Deep Blue,Sable Keys,jazz,melancholic,0.31,68,0.38,0.47,0.88,28,1990,0.80,0.28,0.04
+15,Thunder Fist,Iron Veil,metal,intense,0.97,168,0.35,0.58,0.06,50,2010,0.10,0.95,0.06
+16,Velvet Morning,Mara Cole,r&b,relaxed,0.44,82,0.76,0.59,0.62,62,2020,0.12,0.42,0.09
+17,Concrete Jungle,Grid King,hip-hop,energetic,0.79,96,0.60,0.83,0.12,68,2020,0.05,0.76,0.35
+18,Pine & Rain,Willow Creek,folk,sad,0.33,72,0.32,0.45,0.94,25,2010,0.25,0.28,0.06
