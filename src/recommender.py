@@ -98,43 +98,73 @@ class Recommender:
             return f"'{song.title}' is a reasonable match based on overall profile similarity."
         return f"'{song.title}' by {song.artist}: " + ", ".join(reasons) + "."
 
-def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
-    """Score a single song against user preferences; return (score, reasons)."""
+SCORING_MODES: Dict[str, Dict[str, float]] = {
+    "genre_first": {
+        "genre": 0.27, "mood": 0.23, "energy": 0.18,
+        "acoustic": 0.09, "valence": 0.09, "danceability": 0.04,
+        "popularity": 0.03, "release_decade": 0.03,
+        "instrumentalness": 0.02, "loudness": 0.01, "speechiness": 0.01,
+    },
+    "mood_first": {
+        "genre": 0.15, "mood": 0.35, "energy": 0.18,
+        "acoustic": 0.09, "valence": 0.09, "danceability": 0.04,
+        "popularity": 0.03, "release_decade": 0.03,
+        "instrumentalness": 0.02, "loudness": 0.01, "speechiness": 0.01,
+    },
+    "energy_focused": {
+        "genre": 0.15, "mood": 0.15, "energy": 0.38,
+        "acoustic": 0.09, "valence": 0.09, "danceability": 0.04,
+        "popularity": 0.03, "release_decade": 0.03,
+        "instrumentalness": 0.02, "loudness": 0.01, "speechiness": 0.01,
+    },
+}
+
+
+def score_song(user_prefs: Dict, song: Dict, mode: str = "genre_first") -> Tuple[float, List[str]]:
+    """Score a single song against user preferences using the given mode; return (score, reasons)."""
+    w = SCORING_MODES.get(mode, SCORING_MODES["genre_first"])
     reasons = []
     score = 0.0
 
-    # Categorical matches
     if song.get("genre") == user_prefs.get("genre"):
-        points = 0.30
-        score += points
-        reasons.append(f"genre match (+{points:.2f})")
+        score += w["genre"]
+        reasons.append(f"genre match (+{w['genre']:.2f})")
 
     if song.get("mood") == user_prefs.get("mood"):
-        points = 0.25
-        score += points
-        reasons.append(f"mood match (+{points:.2f})")
+        score += w["mood"]
+        reasons.append(f"mood match (+{w['mood']:.2f})")
 
-    # Numerical similarity — each uses 1.0 - |diff| scaled by weight
     target_energy = user_prefs.get("energy", 0.5)
-    energy_contrib = 0.20 * (1.0 - abs(song.get("energy", 0.5) - target_energy))
+    energy_contrib = w["energy"] * (1.0 - abs(song.get("energy", 0.5) - target_energy))
     score += energy_contrib
     if abs(song.get("energy", 0.5) - target_energy) < 0.2:
         reasons.append(f"energy close (+{energy_contrib:.2f})")
 
     likes_acoustic = user_prefs.get("likes_acoustic", False)
     acousticness = song.get("acousticness", 0.5)
-    acoustic_contrib = 0.10 * (acousticness if likes_acoustic else 1.0 - acousticness)
-    score += acoustic_contrib
+    score += w["acoustic"] * (acousticness if likes_acoustic else 1.0 - acousticness)
 
     target_valence = user_prefs.get("valence", 0.5)
-    valence_contrib = 0.10 * (1.0 - abs(song.get("valence", 0.5) - target_valence))
+    valence_contrib = w["valence"] * (1.0 - abs(song.get("valence", 0.5) - target_valence))
     score += valence_contrib
     if abs(song.get("valence", 0.5) - target_valence) < 0.2:
         reasons.append(f"positivity close (+{valence_contrib:.2f})")
 
     target_dance = user_prefs.get("danceability", 0.5)
-    dance_contrib = 0.05 * (1.0 - abs(song.get("danceability", 0.5) - target_dance))
-    score += dance_contrib
+    score += w["danceability"] * (1.0 - abs(song.get("danceability", 0.5) - target_dance))
+
+    target_pop = user_prefs.get("target_popularity", 0.5)
+    score += w["popularity"] * (1.0 - abs(song.get("popularity", 50) / 100 - target_pop))
+
+    preferred_decade = user_prefs.get("preferred_decade", 2010)
+    score += w["release_decade"] * (1.0 - abs(song.get("release_decade", 2010) - preferred_decade) / 60)
+
+    prefers_instrumental = user_prefs.get("prefers_instrumental", False)
+    instr = song.get("instrumentalness", 0.5)
+    score += w["instrumentalness"] * (instr if prefers_instrumental else 1.0 - instr)
+
+    score += w["loudness"] * (1.0 - abs(song.get("loudness", 0.5) - user_prefs.get("target_loudness", 0.5)))
+    score += w["speechiness"] * (1.0 - abs(song.get("speechiness", 0.5) - user_prefs.get("target_speechiness", 0.5)))
 
     return score, reasons
 

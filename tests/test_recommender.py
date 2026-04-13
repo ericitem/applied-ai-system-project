@@ -132,3 +132,35 @@ def test_recommend_songs_result_includes_reasons_list():
     _, _, reasons = results[0]
     assert isinstance(reasons, list)
     assert len(reasons) > 0
+
+
+def test_mood_first_mode_weights_mood_above_genre():
+    """In mood_first mode, a mood match should outscore a genre match."""
+    user_prefs = {"genre": "pop", "mood": "happy", "energy": 0.5}
+    genre_only = {"genre": "pop", "mood": "chill", "energy": 0.5,
+                  "valence": 0.5, "danceability": 0.5, "acousticness": 0.5,
+                  "popularity": 50, "release_decade": 2010,
+                  "instrumentalness": 0.5, "loudness": 0.5, "speechiness": 0.5}
+    mood_only  = {"genre": "lofi", "mood": "happy", "energy": 0.5,
+                  "valence": 0.5, "danceability": 0.5, "acousticness": 0.5,
+                  "popularity": 50, "release_decade": 2010,
+                  "instrumentalness": 0.5, "loudness": 0.5, "speechiness": 0.5}
+    score_genre, _ = score_song(user_prefs, genre_only, mode="mood_first")
+    score_mood, _  = score_song(user_prefs, mood_only,  mode="mood_first")
+    assert score_mood > score_genre
+
+
+def test_energy_focused_mode_weights_energy_above_genre():
+    """In energy_focused mode, a close energy match should outscore a genre match with far energy."""
+    user_prefs = {"genre": "pop", "mood": "happy", "energy": 0.8}
+    genre_far_energy = {"genre": "pop", "mood": "chill", "energy": 0.2,
+                        "valence": 0.5, "danceability": 0.5, "acousticness": 0.5,
+                        "popularity": 50, "release_decade": 2010,
+                        "instrumentalness": 0.5, "loudness": 0.5, "speechiness": 0.5}
+    no_genre_close_energy = {"genre": "lofi", "mood": "chill", "energy": 0.82,
+                              "valence": 0.5, "danceability": 0.5, "acousticness": 0.5,
+                              "popularity": 50, "release_decade": 2010,
+                              "instrumentalness": 0.5, "loudness": 0.5, "speechiness": 0.5}
+    score_genre, _ = score_song(user_prefs, genre_far_energy,    mode="energy_focused")
+    score_energy, _ = score_song(user_prefs, no_genre_close_energy, mode="energy_focused")
+    assert score_energy > score_genre
