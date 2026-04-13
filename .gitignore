@@ -13,5 +13,7 @@ venv/
 
 # Pytest cache
 .pytest_cache/
+
+# Claude files
 .superpowers/
 docs/
