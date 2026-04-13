@@ -18,6 +18,11 @@ class Song:
     valence: float
     danceability: float
     acousticness: float
+    popularity: float = 50.0
+    release_decade: int = 2010
+    instrumentalness: float = 0.5
+    loudness: float = 0.5
+    speechiness: float = 0.5
 
 @dataclass
 class UserProfile:
@@ -31,6 +36,11 @@ class UserProfile:
     likes_acoustic: bool
     target_valence: float = 0.5
     target_danceability: float = 0.5
+    target_popularity: float = 0.5
+    preferred_decade: int = 2010
+    prefers_instrumental: bool = False
+    target_loudness: float = 0.5
+    target_speechiness: float = 0.5
 
 class Recommender:
     """
@@ -146,6 +156,11 @@ def load_songs(csv_path: str) -> List[Song]:
                 valence=float(row['valence']),
                 danceability=float(row['danceability']),
                 acousticness=float(row['acousticness']),
+                popularity=float(row['popularity']),
+                release_decade=int(row['release_decade']),
+                instrumentalness=float(row['instrumentalness']),
+                loudness=float(row['loudness']),
+                speechiness=float(row['speechiness']),
             ))
     return songs
 
