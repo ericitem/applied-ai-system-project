@@ -1,6 +1,6 @@
 import csv
 from typing import List, Dict, Tuple, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 @dataclass
 class Song:
@@ -29,6 +29,8 @@ class UserProfile:
     favorite_mood: str
     target_energy: float
     likes_acoustic: bool
+    target_valence: float = 0.5
+    target_danceability: float = 0.5
 
 class Recommender:
     """
@@ -39,12 +41,30 @@ class Recommender:
         self.songs = songs
 
     def _score(self, song: Song, user: UserProfile) -> float:
-        """Compute a weighted compatibility score between a song and a user profile."""
+        """Compute a weighted compatibility score between a song and a user profile.
+
+        Weights (sum to 1.0):
+          genre match      0.30  — strongest categorical signal
+          mood match       0.25  — context the user wants right now
+          energy sim       0.20  — continuous proximity to target
+          acoustic fit     0.10  — electronic vs acoustic preference
+          valence sim      0.10  — upbeat vs melancholic preference
+          danceability sim 0.05  — secondary rhythmic preference
+        """
         genre_match = 1.0 if song.genre == user.favorite_genre else 0.0
         mood_match = 1.0 if song.mood == user.favorite_mood else 0.0
         energy_sim = 1.0 - abs(song.energy - user.target_energy)
         acoustic_fit = song.acousticness if user.likes_acoustic else 1.0 - song.acousticness
-        return 0.35 * genre_match + 0.25 * mood_match + 0.25 * energy_sim + 0.15 * acoustic_fit
+        valence_sim = 1.0 - abs(song.valence - user.target_valence)
+        dance_sim = 1.0 - abs(song.danceability - user.target_danceability)
+        return (
+            0.30 * genre_match
+            + 0.25 * mood_match
+            + 0.20 * energy_sim
+            + 0.10 * acoustic_fit
+            + 0.10 * valence_sim
+            + 0.05 * dance_sim
+        )
 
     def recommend(self, user: UserProfile, k: int = 5) -> List[Song]:
         scored = sorted(self.songs, key=lambda s: self._score(s, user), reverse=True)
@@ -56,13 +76,14 @@ class Recommender:
             reasons.append(f"genre matches your preference ({song.genre})")
         if song.mood == user.favorite_mood:
             reasons.append(f"mood matches ({song.mood})")
-        energy_diff = abs(song.energy - user.target_energy)
-        if energy_diff < 0.2:
+        if abs(song.energy - user.target_energy) < 0.2:
             reasons.append(f"energy level is close to your target ({song.energy:.2f} vs {user.target_energy:.2f})")
         if user.likes_acoustic and song.acousticness > 0.5:
             reasons.append(f"has strong acoustic character ({song.acousticness:.2f})")
         elif not user.likes_acoustic and song.acousticness < 0.5:
             reasons.append(f"has electronic/produced sound you prefer ({song.acousticness:.2f})")
+        if abs(song.valence - user.target_valence) < 0.2:
+            reasons.append(f"positivity level matches your vibe ({song.valence:.2f})")
         if not reasons:
             return f"'{song.title}' is a reasonable match based on overall profile similarity."
         return f"'{song.title}' by {song.artist}: " + ", ".join(reasons) + "."
@@ -100,6 +121,8 @@ def recommend_songs(user_prefs: Dict, songs: List[Song], k: int = 5) -> List[Tup
         favorite_mood=user_prefs.get("mood", ""),
         target_energy=user_prefs.get("energy", 0.5),
         likes_acoustic=user_prefs.get("likes_acoustic", False),
+        target_valence=user_prefs.get("valence", 0.5),
+        target_danceability=user_prefs.get("danceability", 0.5),
     )
     rec = Recommender(songs)
     top_songs = rec.recommend(user, k)

@@ -19,30 +19,64 @@ Replace this paragraph with your own summary of what your version does.
 
 Real-world music recommenders use two main strategies. *Collaborative filtering* finds users with similar listening histories and recommends what those users liked — it doesn't need to understand the songs, just patterns in human behavior. *Content-based filtering* analyzes the attributes of songs themselves and finds songs whose characteristics match a user's stated preferences.
 
-This system uses **content-based filtering**. Each song is scored against the user's profile using a weighted formula across four features, then songs are ranked by score and the top results are returned.
+This system uses **content-based filtering**. Each song is scored against the user's profile using a weighted formula, then songs are ranked by score and the top results are returned.
 
-**Song features used for scoring:**
-- `genre` — style of music (pop, lofi, rock, ambient, jazz, synthwave, indie pop)
-- `mood` — emotional character (happy, chill, intense, relaxed, focused, moody)
-- `energy` — intensity level on a 0–1 scale
-- `acousticness` — acoustic vs. electronic character on a 0–1 scale
+### Song Features
 
-**User profile fields:**
-- `favorite_genre` — preferred genre
-- `favorite_mood` — preferred mood context
-- `target_energy` — preferred energy level (0–1)
-- `likes_acoustic` — whether the user prefers acoustic or electronic sound
-
-**Scoring formula** (weighted sum, max score = 1.0):
-
-| Feature | Weight | How it's measured |
+| Feature | Type | Description |
 |---|---|---|
-| Genre match | 35% | 1.0 if genres match, 0.0 if not |
-| Mood match | 25% | 1.0 if moods match, 0.0 if not |
-| Energy similarity | 25% | `1.0 - \|song.energy - user.target_energy\|` |
-| Acoustic fit | 15% | Song's acousticness score (or its inverse if user prefers electronic) |
+| `genre` | categorical | Style of music (pop, r&b, hip-hop, rock, metal, country, folk, jazz, lofi, electronic, ambient, synthwave, indie pop) |
+| `mood` | categorical | Emotional context (happy, chill, intense, relaxed, focused, moody, romantic, energetic, nostalgic, melancholic, sad) |
+| `energy` | float 0–1 | Intensity level |
+| `valence` | float 0–1 | Musical positivity — high = upbeat, low = melancholic |
+| `danceability` | float 0–1 | Rhythmic suitability for dancing |
+| `acousticness` | float 0–1 | Acoustic vs. electronic character |
+| `tempo_bpm` | float | Beats per minute (stored, not scored) |
 
-Songs are ranked highest to lowest by score, and the top `k` are returned as recommendations.
+### User Profile
+
+| Field | Type | Description |
+|---|---|---|
+| `favorite_genre` | str | Preferred genre |
+| `favorite_mood` | str | Preferred mood context |
+| `target_energy` | float 0–1 | Preferred energy level |
+| `likes_acoustic` | bool | Prefers acoustic over electronic |
+| `target_valence` | float 0–1 | Preferred positivity level (default 0.5) |
+| `target_danceability` | float 0–1 | Preferred danceability level (default 0.5) |
+
+### Algorithm Recipe (Scoring Formula)
+
+Each song receives a weighted compatibility score (max = 1.0):
+
+| Feature | Weight | Formula |
+|---|---|---|
+| Genre match | **30%** | `1.0` if match, `0.0` if not |
+| Mood match | **25%** | `1.0` if match, `0.0` if not |
+| Energy similarity | **20%** | `1.0 - \|song.energy - user.target_energy\|` |
+| Acoustic fit | **10%** | `acousticness` if user likes acoustic, else `1 - acousticness` |
+| Valence similarity | **10%** | `1.0 - \|song.valence - user.target_valence\|` |
+| Danceability similarity | **5%** | `1.0 - \|song.danceability - user.target_danceability\|` |
+
+Songs are sorted highest to lowest by score, and the top `k` are returned with explanations.
+
+### System Diagram
+
+```mermaid
+flowchart TD
+    A([User Profile]) --> B[Load songs.csv]
+    B --> C{For each song}
+    C --> D[Compute weighted score]
+    D --> C
+    C --> E[Sort high to low]
+    E --> F([Top k Recommendations])
+```
+
+### Potential Biases
+
+- **Genre over-dominance**: genre carries 30% weight, so a near-perfect song in the wrong genre will always rank below a mediocre song in the right genre.
+- **Cold-start limitations**: the system needs explicit preferences — it can't infer taste from behavior.
+- **Binary genre/mood matching**: there are no partial matches (e.g., "pop" and "indie pop" score the same as "pop" and "metal" — both zero).
+- **Limited catalog**: 18 songs means some user profiles will get weak recommendations simply because no good match exists.
 
 ---
 
