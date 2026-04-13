@@ -88,11 +88,49 @@ class Recommender:
             return f"'{song.title}' is a reasonable match based on overall profile similarity."
         return f"'{song.title}' by {song.artist}: " + ", ".join(reasons) + "."
 
+def score_song(user_prefs: Dict, song: Dict) -> Tuple[float, List[str]]:
+    """Score a single song against user preferences; return (score, reasons)."""
+    reasons = []
+    score = 0.0
+
+    # Categorical matches
+    if song.get("genre") == user_prefs.get("genre"):
+        points = 0.30
+        score += points
+        reasons.append(f"genre match (+{points:.2f})")
+
+    if song.get("mood") == user_prefs.get("mood"):
+        points = 0.25
+        score += points
+        reasons.append(f"mood match (+{points:.2f})")
+
+    # Numerical similarity — each uses 1.0 - |diff| scaled by weight
+    target_energy = user_prefs.get("energy", 0.5)
+    energy_contrib = 0.20 * (1.0 - abs(song.get("energy", 0.5) - target_energy))
+    score += energy_contrib
+    if abs(song.get("energy", 0.5) - target_energy) < 0.2:
+        reasons.append(f"energy close (+{energy_contrib:.2f})")
+
+    likes_acoustic = user_prefs.get("likes_acoustic", False)
+    acousticness = song.get("acousticness", 0.5)
+    acoustic_contrib = 0.10 * (acousticness if likes_acoustic else 1.0 - acousticness)
+    score += acoustic_contrib
+
+    target_valence = user_prefs.get("valence", 0.5)
+    valence_contrib = 0.10 * (1.0 - abs(song.get("valence", 0.5) - target_valence))
+    score += valence_contrib
+    if abs(song.get("valence", 0.5) - target_valence) < 0.2:
+        reasons.append(f"positivity close (+{valence_contrib:.2f})")
+
+    target_dance = user_prefs.get("danceability", 0.5)
+    dance_contrib = 0.05 * (1.0 - abs(song.get("danceability", 0.5) - target_dance))
+    score += dance_contrib
+
+    return score, reasons
+
+
 def load_songs(csv_path: str) -> List[Song]:
-    """
-    Loads songs from a CSV file.
-    Required by src/main.py
-    """
+    """Read songs.csv and return a list of Song objects with numeric fields cast to float/int."""
     songs = []
     with open(csv_path, newline='') as f:
         reader = csv.DictReader(f)
@@ -111,24 +149,18 @@ def load_songs(csv_path: str) -> List[Song]:
             ))
     return songs
 
-def recommend_songs(user_prefs: Dict, songs: List[Song], k: int = 5) -> List[Tuple[Song, float, str]]:
-    """
-    Functional implementation of the recommendation logic.
-    Required by src/main.py
-    """
-    user = UserProfile(
-        favorite_genre=user_prefs.get("genre", ""),
-        favorite_mood=user_prefs.get("mood", ""),
-        target_energy=user_prefs.get("energy", 0.5),
-        likes_acoustic=user_prefs.get("likes_acoustic", False),
-        target_valence=user_prefs.get("valence", 0.5),
-        target_danceability=user_prefs.get("danceability", 0.5),
-    )
-    rec = Recommender(songs)
-    top_songs = rec.recommend(user, k)
-    results = []
-    for song in top_songs:
-        score = rec._score(song, user)
-        explanation = rec.explain_recommendation(user, song)
-        results.append((song, score, explanation))
-    return results
+def recommend_songs(user_prefs: Dict, songs: List[Song], k: int = 5) -> List[Tuple[Song, float, List[str]]]:
+    """Score every song with score_song, sort by score descending, and return the top k results."""
+    scored = []
+    for song in songs:
+        song_dict = {
+            "genre": song.genre,
+            "mood": song.mood,
+            "energy": song.energy,
+            "valence": song.valence,
+            "danceability": song.danceability,
+            "acousticness": song.acousticness,
+        }
+        score, reasons = score_song(user_prefs, song_dict)
+        scored.append((song, score, reasons))
+    return sorted(scored, key=lambda x: x[1], reverse=True)[:k]
