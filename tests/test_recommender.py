@@ -200,3 +200,21 @@ def test_energy_focused_mode_weights_energy_above_genre():
     score_genre, _ = score_song(user_prefs, genre_far_energy,    mode="energy_focused")
     score_energy, _ = score_song(user_prefs, no_genre_close_energy, mode="energy_focused")
     assert score_energy > score_genre
+
+
+def test_recommend_songs_diversity_flag_reduces_same_artist_repeats():
+    """With diversity=True, recommend_songs should not return two songs from the same artist
+    when a different-artist option with a reasonable score exists."""
+    songs = [
+        Song(id=1, title="Pop Hit 1", artist="Neon Echo", genre="pop", mood="happy",
+             energy=0.8, tempo_bpm=120, valence=0.9, danceability=0.8, acousticness=0.2),
+        Song(id=2, title="Pop Hit 2", artist="Neon Echo", genre="pop", mood="happy",
+             energy=0.78, tempo_bpm=118, valence=0.85, danceability=0.78, acousticness=0.22),
+        Song(id=3, title="Other Track", artist="ArtistB", genre="pop", mood="happy",
+             energy=0.75, tempo_bpm=115, valence=0.80, danceability=0.75, acousticness=0.25),
+    ]
+    user_prefs = {"genre": "pop", "mood": "happy", "energy": 0.8}
+    results = recommend_songs(user_prefs, songs, k=2, diversity=True)
+    artists = [song.artist for song, _, _ in results]
+    assert "Neon Echo" in artists
+    assert "ArtistB" in artists

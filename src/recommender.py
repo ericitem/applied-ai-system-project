@@ -221,7 +221,13 @@ def load_songs(csv_path: str) -> List[Song]:
             ))
     return songs
 
-def recommend_songs(user_prefs: Dict, songs: List[Song], k: int = 5) -> List[Tuple[Song, float, List[str]]]:
+def recommend_songs(
+    user_prefs: Dict,
+    songs: List[Song],
+    k: int = 5,
+    mode: str = "genre_first",
+    diversity: bool = False,
+) -> List[Tuple[Song, float, List[str]]]:
     """Score every song with score_song, sort by score descending, and return the top k results."""
     scored = []
     for song in songs:
@@ -232,7 +238,15 @@ def recommend_songs(user_prefs: Dict, songs: List[Song], k: int = 5) -> List[Tup
             "valence": song.valence,
             "danceability": song.danceability,
             "acousticness": song.acousticness,
+            "popularity": song.popularity,
+            "release_decade": song.release_decade,
+            "instrumentalness": song.instrumentalness,
+            "loudness": song.loudness,
+            "speechiness": song.speechiness,
         }
-        score, reasons = score_song(user_prefs, song_dict)
+        score, reasons = score_song(user_prefs, song_dict, mode=mode)
         scored.append((song, score, reasons))
-    return sorted(scored, key=lambda x: x[1], reverse=True)[:k]
+    scored.sort(key=lambda x: x[1], reverse=True)
+    if diversity:
+        return diversify(scored, k)
+    return scored[:k]
