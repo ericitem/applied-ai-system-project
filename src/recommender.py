@@ -175,6 +175,7 @@ SAME_GENRE_PENALTY = 0.10
 
 def diversify(scored: List[Tuple[Song, float, List[str]]], k: int) -> List[Tuple[Song, float, List[str]]]:
     """Greedily select k songs, penalizing repeats of the same artist or genre."""
+    k = min(k, len(scored))
     selected: List[Tuple[Song, float, List[str]]] = []
     remaining = list(scored)
 
