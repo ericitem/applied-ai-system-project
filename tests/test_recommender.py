@@ -1,4 +1,4 @@
-from src.recommender import Song, UserProfile, Recommender, score_song, recommend_songs, load_songs
+from src.recommender import Song, UserProfile, Recommender, score_song, recommend_songs, load_songs, diversify
 
 def make_small_recommender() -> Recommender:
     songs = [
@@ -148,6 +148,42 @@ def test_mood_first_mode_weights_mood_above_genre():
     score_genre, _ = score_song(user_prefs, genre_only, mode="mood_first")
     score_mood, _  = score_song(user_prefs, mood_only,  mode="mood_first")
     assert score_mood > score_genre
+
+
+def test_diversify_prefers_different_artist_over_same_artist():
+    """When two songs from the same artist compete with one from a different artist,
+    the second same-artist song should be pushed below the different-artist song."""
+    artist_a1 = Song(id=1, title="A Hit 1", artist="ArtistA", genre="pop", mood="happy",
+                     energy=0.8, tempo_bpm=120, valence=0.9, danceability=0.8, acousticness=0.2)
+    artist_a2 = Song(id=2, title="A Hit 2", artist="ArtistA", genre="pop", mood="chill",
+                     energy=0.7, tempo_bpm=110, valence=0.7, danceability=0.7, acousticness=0.3)
+    artist_b1 = Song(id=3, title="B Track", artist="ArtistB", genre="rock", mood="intense",
+                     energy=0.6, tempo_bpm=130, valence=0.5, danceability=0.6, acousticness=0.1)
+
+    # A1 scores highest, A2 slightly above B — without diversity, order is A1, A2, B
+    # With diversity, A2 gets SAME_ARTIST_PENALTY (0.20): 0.75 - 0.20 = 0.55 < B's 0.70
+    # So order should be A1, B
+    scored = [
+        (artist_a1, 0.90, ["genre match"]),
+        (artist_a2, 0.75, ["energy close"]),
+        (artist_b1, 0.70, ["energy close"]),
+    ]
+    result = diversify(scored, k=2)
+    titles = [song.title for song, _, _ in result]
+    assert titles[0] == "A Hit 1"
+    assert titles[1] == "B Track"
+
+
+def test_diversify_returns_k_songs():
+    """diversify should return exactly k songs."""
+    songs = [
+        Song(id=i, title=f"Song {i}", artist=f"Artist{i}", genre="pop", mood="happy",
+             energy=0.5, tempo_bpm=100, valence=0.5, danceability=0.5, acousticness=0.5)
+        for i in range(1, 6)
+    ]
+    scored = [(s, 1.0 - i * 0.1, []) for i, s in enumerate(songs)]
+    result = diversify(scored, k=3)
+    assert len(result) == 3
 
 
 def test_energy_focused_mode_weights_energy_above_genre():

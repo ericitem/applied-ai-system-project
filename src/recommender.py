@@ -169,6 +169,32 @@ def score_song(user_prefs: Dict, song: Dict, mode: str = "genre_first") -> Tuple
     return score, reasons
 
 
+SAME_ARTIST_PENALTY = 0.20
+SAME_GENRE_PENALTY = 0.10
+
+
+def diversify(scored: List[Tuple[Song, float, List[str]]], k: int) -> List[Tuple[Song, float, List[str]]]:
+    """Greedily select k songs, penalizing repeats of the same artist or genre."""
+    selected: List[Tuple[Song, float, List[str]]] = []
+    remaining = list(scored)
+
+    while len(selected) < k and remaining:
+        best_idx = 0
+        best_adjusted = float("-inf")
+        for i, (song, score, reasons) in enumerate(remaining):
+            penalty = sum(
+                (SAME_ARTIST_PENALTY if song.artist == s.artist else 0.0) +
+                (SAME_GENRE_PENALTY if song.genre == s.genre else 0.0)
+                for s, _, _ in selected
+            )
+            if score - penalty > best_adjusted:
+                best_adjusted = score - penalty
+                best_idx = i
+        selected.append(remaining.pop(best_idx))
+
+    return selected
+
+
 def load_songs(csv_path: str) -> List[Song]:
     """Read songs.csv and return a list of Song objects with numeric fields cast to float/int."""
     songs = []
