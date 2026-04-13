@@ -17,17 +17,32 @@ Replace this paragraph with your own summary of what your version does.
 
 ## How The System Works
 
-Explain your design in plain language.
+Real-world music recommenders use two main strategies. *Collaborative filtering* finds users with similar listening histories and recommends what those users liked — it doesn't need to understand the songs, just patterns in human behavior. *Content-based filtering* analyzes the attributes of songs themselves and finds songs whose characteristics match a user's stated preferences.
 
-Some prompts to answer:
+This system uses **content-based filtering**. Each song is scored against the user's profile using a weighted formula across four features, then songs are ranked by score and the top results are returned.
 
-- What features does each `Song` use in your system
-  - For example: genre, mood, energy, tempo
-- What information does your `UserProfile` store
-- How does your `Recommender` compute a score for each song
-- How do you choose which songs to recommend
+**Song features used for scoring:**
+- `genre` — style of music (pop, lofi, rock, ambient, jazz, synthwave, indie pop)
+- `mood` — emotional character (happy, chill, intense, relaxed, focused, moody)
+- `energy` — intensity level on a 0–1 scale
+- `acousticness` — acoustic vs. electronic character on a 0–1 scale
 
-You can include a simple diagram or bullet list if helpful.
+**User profile fields:**
+- `favorite_genre` — preferred genre
+- `favorite_mood` — preferred mood context
+- `target_energy` — preferred energy level (0–1)
+- `likes_acoustic` — whether the user prefers acoustic or electronic sound
+
+**Scoring formula** (weighted sum, max score = 1.0):
+
+| Feature | Weight | How it's measured |
+|---|---|---|
+| Genre match | 35% | 1.0 if genres match, 0.0 if not |
+| Mood match | 25% | 1.0 if moods match, 0.0 if not |
+| Energy similarity | 25% | `1.0 - \|song.energy - user.target_energy\|` |
+| Acoustic fit | 15% | Song's acousticness score (or its inverse if user prefers electronic) |
+
+Songs are ranked highest to lowest by score, and the top `k` are returned as recommendations.
 
 ---
 
