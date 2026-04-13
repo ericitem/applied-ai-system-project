@@ -214,6 +214,10 @@ def test_recommend_songs_diversity_flag_reduces_same_artist_repeats():
              energy=0.75, tempo_bpm=115, valence=0.80, danceability=0.75, acousticness=0.25),
     ]
     user_prefs = {"genre": "pop", "mood": "happy", "energy": 0.8}
+    # Pre-condition: without diversity, both top-2 slots should be Neon Echo
+    baseline = recommend_songs(user_prefs, songs, k=2, diversity=False)
+    assert [s.artist for s, _, _ in baseline].count("Neon Echo") == 2
+    # With diversity, ArtistB should displace the second Neon Echo slot
     results = recommend_songs(user_prefs, songs, k=2, diversity=True)
     artists = [song.artist for song, _, _ in results]
     assert "Neon Echo" in artists
