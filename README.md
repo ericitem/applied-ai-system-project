@@ -11,13 +11,13 @@ Your goal is to:
 - Evaluate what your system gets right and wrong
 - Reflect on how this mirrors real world AI recommenders
 
-Replace this paragraph with your own summary of what your version does.
+VibeMatch 1.0 scores every song in an 18-song catalog against a user's stated preferences (genre, mood, energy, acoustic preference, positivity, and danceability) using a weighted formula, then returns the top matches with a plain-language explanation of why each song ranked where it did.
 
 ---
 
 ## How The System Works
 
-Real-world music recommenders use two main strategies. *Collaborative filtering* finds users with similar listening histories and recommends what those users liked — it doesn't need to understand the songs, just patterns in human behavior. *Content-based filtering* analyzes the attributes of songs themselves and finds songs whose characteristics match a user's stated preferences.
+Real-world music recommenders use two main strategies. *Collaborative filtering* finds users with similar listening histories and recommends what those users liked. It doesn't need to understand the songs, just patterns in human behavior. *Content-based filtering* analyzes the attributes of songs themselves and finds songs whose characteristics match a user's stated preferences.
 
 This system uses **content-based filtering**. Each song is scored against the user's profile using a weighted formula, then songs are ranked by score and the top results are returned.
 
@@ -28,7 +28,7 @@ This system uses **content-based filtering**. Each song is scored against the us
 | `genre` | categorical | Style of music (pop, r&b, hip-hop, rock, metal, country, folk, jazz, lofi, electronic, ambient, synthwave, indie pop) |
 | `mood` | categorical | Emotional context (happy, chill, intense, relaxed, focused, moody, romantic, energetic, nostalgic, melancholic, sad) |
 | `energy` | float 0–1 | Intensity level |
-| `valence` | float 0–1 | Musical positivity — high = upbeat, low = melancholic |
+| `valence` | float 0–1 | Musical positivity (high = upbeat, low = melancholic) |
 | `danceability` | float 0–1 | Rhythmic suitability for dancing |
 | `acousticness` | float 0–1 | Acoustic vs. electronic character |
 | `tempo_bpm` | float | Beats per minute (stored, not scored) |
@@ -74,8 +74,8 @@ flowchart TD
 ### Potential Biases
 
 - **Genre over-dominance**: genre carries 30% weight, so a near-perfect song in the wrong genre will always rank below a mediocre song in the right genre.
-- **Cold-start limitations**: the system needs explicit preferences — it can't infer taste from behavior.
-- **Binary genre/mood matching**: there are no partial matches (e.g., "pop" and "indie pop" score the same as "pop" and "metal" — both zero).
+- **Cold-start limitations**: the system needs explicit preferences; it can't infer taste from behavior.
+- **Binary genre/mood matching**: there are no partial matches (e.g., "pop" and "indie pop" score the same as "pop" and "metal", both zero).
 - **Limited catalog**: 18 songs means some user profiles will get weak recommendations simply because no good match exists.
 
 ---
