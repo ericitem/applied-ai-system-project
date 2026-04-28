@@ -16,4 +16,9 @@ venv/
 
 # Claude files
 .superpowers/
+.claude/
+CLAUDE.md
 docs/
+.env
+tmp/
+.playwright-mcp/
