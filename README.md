@@ -28,7 +28,7 @@ The LLM handles the parts that require language understanding (parsing intent, g
 
 | Component | File | Role |
 |---|---|---|
-| User Interface | `app.py` / `src/main.py` | Streamlit web UI and CLI entry points |
+| User Interface | `app.py` / `src/main.py` | Streamlit web UI (dark theme, mood pills, song cards, history, more-like-this) and CLI entry points |
 | Input Guardrails | `src/agent.py` | Rejects empty input and requests over 500 characters before any API call |
 | Interpreter | `src/interpreter.py` | Calls `gpt-4o-mini` to parse natural language into an 11-field `user_prefs` dict |
 | Recommender | `src/recommender.py` | Deterministic weighted scoring engine (unchanged from v1) |
@@ -105,7 +105,10 @@ Streamlit UI:
 streamlit run app.py
 ```
 
-Opens at `http://localhost:8501`. Enter a music request and click **Find songs**.
+Opens at `http://localhost:8501`. Type a music request or click a mood quick-pick, then hit **Find Songs**.
+
+![VibeMatch landing](assets/vibematch-landing.png)
+![VibeMatch results](assets/vibematch-results.png)
 
 CLI with AI pipeline:
 
@@ -248,7 +251,7 @@ The evaluator is a developer tool, not part of the user-facing pipeline. Running
 
 | Decision | Trade-off |
 |---|---|
-| 18-song catalog | Easy to inspect and test, but too small to produce genuinely diverse recommendations |
+| 62-song catalog across 18 genres | Large enough for meaningful variety, but still small compared to a real music service |
 | No conversation history | Simpler pipeline and no session state, but users cannot refine a request across turns |
 | `response_format=json_object` | Reliable structured output, but only works with compatible models |
 | Greedy diversity selection | Reduces artist and genre repetition, but may skip a slightly higher-scoring song to do it |
@@ -281,7 +284,7 @@ Running the tests surfaced two concrete fixes. First, the conftest.py pattern wa
 
 - Tests mock the LLM completely, so they verify control flow and data handling but not output quality.
 - There are no integration tests against the real API. The evaluator fills that role when run manually.
-- The 18-song catalog means some queries will get weak recommendations simply because no close match exists in the data.
+- The 62-song catalog covers 18 genres but is still small compared to real music services. Some queries will get weak recommendations simply because no close match exists in the data.
 
 ---
 
@@ -289,7 +292,7 @@ Running the tests surfaced two concrete fixes. First, the conftest.py pattern wa
 
 ### Limitations and Biases
 
-The biggest limitation is the 18-song catalog. It validates that the pipeline works end to end, but it is not large enough to produce recommendations that feel genuinely useful. Many queries return a best-available match rather than an actual match, and the explainer writes convincing prose for whatever the recommender returns. Nothing in the pipeline signals when match quality is poor, which is the core reliability risk.
+The catalog has grown to 62 songs across 18 genres, which is large enough to validate the pipeline end to end and produce more varied recommendations. However, it is still small compared to a real music service. Some queries return a best-available match rather than a genuine match, and the explainer writes convincing prose for whatever the recommender returns. Nothing in the pipeline signals when match quality is poor, which remains the core reliability risk.
 
 The scoring weights are hand-tuned rather than learned from data. A genre match counting for 30% of the total score is an assumption, not a measured result, and those weights may not generalize across users or query types.
 
