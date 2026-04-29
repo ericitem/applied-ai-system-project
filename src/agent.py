@@ -31,6 +31,7 @@ class AgentResult:
     recommendations: list = field(default_factory=list)
     explanation: str = ""
     error: str | None = None
+    user_prefs: dict | None = None
 
 
 def run(user_input: str, k: int = 5) -> AgentResult:
@@ -45,7 +46,7 @@ def run(user_input: str, k: int = 5) -> AgentResult:
         if not recs:
             return AgentResult(error="No matching songs found for your request.")
         explanation = explain(user_input, recs)
-        return AgentResult(recommendations=recs, explanation=explanation)
+        return AgentResult(recommendations=recs, explanation=explanation, user_prefs=user_prefs)
     except Exception as exc:
         logger.error("agent.run error: %s", exc)
         return AgentResult(error=str(exc))
