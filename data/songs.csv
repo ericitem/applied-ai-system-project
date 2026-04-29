@@ -17,3 +17,47 @@ id,title,artist,genre,mood,energy,tempo_bpm,valence,danceability,acousticness,po
 16,Velvet Morning,Mara Cole,r&b,relaxed,0.44,82,0.76,0.59,0.62,62,2020,0.12,0.42,0.09
 17,Concrete Jungle,Grid King,hip-hop,energetic,0.79,96,0.60,0.83,0.12,68,2020,0.05,0.76,0.35
 18,Pine & Rain,Willow Creek,folk,sad,0.33,72,0.32,0.45,0.94,25,2010,0.06,0.28,0.06
+19,Golden Rush,SunKiss,pop,happy,0.85,122,0.88,0.82,0.12,78,2020,0.03,0.80,0.05
+20,City Lights,Nova Ray,pop,romantic,0.71,105,0.75,0.72,0.28,72,2020,0.05,0.68,0.07
+21,Electric Summer,The Glows,pop,energetic,0.89,128,0.82,0.85,0.08,80,2020,0.04,0.85,0.06
+22,Rain Delay,Cloud Nine,lofi,chill,0.32,75,0.55,0.55,0.82,38,2020,0.88,0.28,0.02
+23,Late Return,Amber Tones,lofi,melancholic,0.29,70,0.42,0.50,0.78,35,2020,0.82,0.25,0.03
+24,Broken Signal,Static Wave,rock,intense,0.87,145,0.52,0.62,0.12,55,2010,0.06,0.85,0.06
+25,Last Train,Iron Curtain,rock,melancholic,0.72,118,0.40,0.58,0.22,48,2000,0.08,0.72,0.05
+26,Open Road,Stone Ridge,rock,energetic,0.80,132,0.65,0.68,0.18,62,2010,0.05,0.82,0.05
+27,Ocean Floor,Deep Hum,ambient,peaceful,0.22,55,0.60,0.35,0.90,28,2020,0.98,0.18,0.01
+28,Morning Fog,Still Air,ambient,chill,0.18,52,0.65,0.30,0.94,25,2020,0.96,0.15,0.01
+29,Signal Drift,Vapor Trail,ambient,moody,0.35,75,0.45,0.42,0.85,32,2010,0.92,0.28,0.02
+30,Midnight Blues,Trio Fade,jazz,melancholic,0.42,88,0.45,0.52,0.85,30,2000,0.72,0.35,0.04
+31,Uptown Swing,Ray Santos,jazz,happy,0.65,112,0.78,0.68,0.80,38,1990,0.55,0.58,0.05
+32,Neon City Run,Chrome Phase,synthwave,energetic,0.82,118,0.62,0.78,0.08,58,2020,0.78,0.80,0.03
+33,Retro Future,Glitch State,synthwave,moody,0.68,105,0.50,0.70,0.10,50,2020,0.82,0.72,0.03
+34,Wildflower Days,Hazel Vine,indie pop,happy,0.68,118,0.82,0.74,0.42,60,2020,0.08,0.65,0.06
+35,Glass Heart,The Petal Drops,indie pop,sad,0.52,95,0.38,0.55,0.55,55,2020,0.10,0.50,0.07
+36,Slow Burn,Jade Monroe,r&b,romantic,0.58,88,0.68,0.72,0.38,68,2020,0.08,0.58,0.12
+37,Midnight Touch,Ash Gold,r&b,moody,0.62,92,0.55,0.75,0.30,65,2020,0.06,0.62,0.10
+38,Pulse Line,Frequency 9,electronic,energetic,0.91,135,0.68,0.88,0.05,70,2020,0.82,0.88,0.03
+39,Sub Zero,Cold Current,electronic,intense,0.88,142,0.52,0.82,0.04,65,2020,0.88,0.88,0.03
+40,Dusty Road,Caleb Moore,country,relaxed,0.48,95,0.72,0.62,0.78,52,2010,0.12,0.45,0.07
+41,Harvest Moon,Prairie Song,country,nostalgic,0.42,88,0.68,0.58,0.82,48,2000,0.15,0.40,0.06
+42,Void Crusher,Deathform,metal,intense,0.96,175,0.28,0.52,0.04,45,2010,0.12,0.98,0.07
+43,Raging Storm,Chain Breach,metal,intense,0.94,162,0.32,0.55,0.06,42,2020,0.10,0.95,0.06
+44,Flow State,Lyric Lane,hip-hop,focused,0.72,88,0.58,0.80,0.15,65,2020,0.10,0.72,0.30
+45,Crown Up,King Moss,hip-hop,energetic,0.82,98,0.65,0.85,0.10,72,2020,0.05,0.78,0.38
+46,River Song,Oak and Stone,folk,peaceful,0.28,68,0.62,0.42,0.92,28,2010,0.20,0.25,0.05
+47,Wanderer,June Lark,folk,nostalgic,0.38,80,0.58,0.48,0.88,32,2000,0.15,0.32,0.06
+48,Dawn Sonata,Elena Voss,classical,peaceful,0.25,72,0.70,0.30,0.95,30,2000,0.98,0.20,0.01
+49,Nocturne No. 3,Mercer Ensemble,classical,melancholic,0.18,58,0.38,0.25,0.98,25,1990,0.99,0.15,0.01
+50,Spring Overture,Baltic Strings,classical,uplifting,0.48,95,0.80,0.42,0.96,32,2010,0.98,0.35,0.01
+51,Island Breeze,Roots Collective,reggae,relaxed,0.52,75,0.82,0.72,0.55,48,2010,0.15,0.48,0.12
+52,Rasta Sunrise,One Love Band,reggae,happy,0.58,80,0.88,0.78,0.50,52,2000,0.12,0.52,0.14
+53,Cool Runnings,Tropic Beats,reggae,chill,0.45,70,0.75,0.68,0.62,45,2020,0.18,0.42,0.10
+54,Slow Hand,Delta Kings,blues,melancholic,0.38,72,0.40,0.52,0.78,30,2000,0.35,0.35,0.06
+55,Midnight Hour,Cross Road,blues,moody,0.52,85,0.45,0.58,0.72,28,1990,0.28,0.48,0.08
+56,Deep South Rain,Mudhole Jones,blues,sad,0.32,68,0.35,0.45,0.85,25,2010,0.40,0.28,0.05
+57,Sol y Mar,Ritmo Libre,latin,happy,0.78,115,0.88,0.88,0.35,68,2020,0.08,0.75,0.12
+58,Fuego,Casa Ritmo,latin,energetic,0.85,125,0.82,0.90,0.28,72,2020,0.05,0.80,0.10
+59,Brisas de la Noche,Luna Suave,latin,romantic,0.62,95,0.72,0.80,0.45,62,2020,0.10,0.60,0.08
+60,Neon Bloom,PULSE,k-pop,energetic,0.88,130,0.85,0.90,0.08,82,2020,0.05,0.85,0.10
+61,Starfall,ECHO7,k-pop,happy,0.82,122,0.90,0.88,0.12,85,2020,0.04,0.82,0.08
+62,Shadow Play,Drift,k-pop,moody,0.72,108,0.52,0.82,0.10,78,2020,0.08,0.72,0.07
