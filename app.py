@@ -1,3 +1,4 @@
+import html
 import streamlit as st
 from src.agent import run, AgentResult
 
@@ -115,6 +116,34 @@ MOOD_PILLS = [
     ("🔥 Hype",             "intense hype music to get pumped up"),
 ]
 
+PREF_COLORS = {
+    "genre":                ("#6366f1", "#e0e7ff"),
+    "mood":                 ("#10b981", "#d1fae5"),
+    "energy":               ("#f59e0b", "#fef3c7"),
+    "valence":              ("#f59e0b", "#fef3c7"),
+    "danceability":         ("#f59e0b", "#fef3c7"),
+    "likes_acoustic":       ("#06b6d4", "#cffafe"),
+    "prefers_instrumental": ("#06b6d4", "#cffafe"),
+}
+PREF_LABELS = {
+    "genre": "genre", "mood": "mood", "energy": "energy",
+    "valence": "valence", "danceability": "dance",
+    "likes_acoustic": "acoustic",
+    "prefers_instrumental": "instrumental",
+}
+SHOW_PREFS = [
+    "genre", "mood", "energy", "valence",
+    "danceability", "likes_acoustic", "prefers_instrumental",
+]
+
+GENRE_EMOJI = {
+    "pop": "🎤", "rock": "🎸", "lofi": "☕", "hip-hop": "🎧",
+    "electronic": "⚡", "jazz": "🎷", "r&b": "🎶", "ambient": "🌙",
+    "classical": "🎻", "country": "🤠", "metal": "🔥", "folk": "🪕",
+    "indie pop": "🌸", "synthwave": "🌆", "reggae": "🌴", "blues": "🎺",
+    "latin": "💃", "k-pop": "⭐",
+}
+
 st.markdown(
     '<p style="color:#475569;font-size:0.65rem;font-weight:700;'
     'letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">'
@@ -150,8 +179,8 @@ do_search = (
 
 if st.session_state.history:
     with st.expander("🕐 Recent searches"):
-        for past_q in reversed(st.session_state.history[-5:]):
-            if st.button(f"↩ {past_q}", key=f"hist_{past_q}"):
+        for idx, past_q in enumerate(reversed(st.session_state.history[-5:])):
+            if st.button(f"↩ {past_q}", key=f"hist_{idx}"):
                 st.session_state["prefill"] = past_q
                 st.rerun()
 
@@ -169,26 +198,6 @@ if do_search:
             st.error(result.error)
         else:
             st.markdown('<div style="height:8px"></div>', unsafe_allow_html=True)
-
-            PREF_COLORS = {
-                "genre":                ("#6366f1", "#e0e7ff"),
-                "mood":                 ("#10b981", "#d1fae5"),
-                "energy":               ("#f59e0b", "#fef3c7"),
-                "valence":              ("#f59e0b", "#fef3c7"),
-                "danceability":         ("#f59e0b", "#fef3c7"),
-                "likes_acoustic":       ("#06b6d4", "#cffafe"),
-                "prefers_instrumental": ("#06b6d4", "#cffafe"),
-            }
-            PREF_LABELS = {
-                "genre": "genre", "mood": "mood", "energy": "energy",
-                "valence": "valence", "danceability": "dance",
-                "likes_acoustic": "acoustic",
-                "prefers_instrumental": "instrumental",
-            }
-            SHOW_PREFS = [
-                "genre", "mood", "energy", "valence",
-                "danceability", "likes_acoustic", "prefers_instrumental",
-            ]
 
             with st.expander("🤖 What VibeMatch understood"):
                 if result.user_prefs:
@@ -224,14 +233,6 @@ if do_search:
                 'Your recommendations</div>',
                 unsafe_allow_html=True,
             )
-
-            GENRE_EMOJI = {
-                "pop": "🎤", "rock": "🎸", "lofi": "☕", "hip-hop": "🎧",
-                "electronic": "⚡", "jazz": "🎷", "r&b": "🎶", "ambient": "🌙",
-                "classical": "🎻", "country": "🤠", "metal": "🔥", "folk": "🪕",
-                "indie pop": "🌸", "synthwave": "🌆", "reggae": "🌴", "blues": "🎺",
-                "latin": "💃", "k-pop": "⭐",
-            }
 
             for i, (song, score, reasons) in enumerate(result.recommendations, 1):
                 genre_emoji = GENRE_EMOJI.get(song.genre, "🎵")
@@ -282,7 +283,7 @@ if do_search:
                 with btn_cols[1]:
                     liked = song.title in st.session_state.liked
                     if st.button("❤️" if liked else "👍", key=f"like_{i}"):
-                        st.session_state.liked.add(song.title)
+                        st.session_state.liked = st.session_state.liked | {song.title}
                         st.rerun()
                 with btn_cols[2]:
                     st.button("👎", key=f"dislike_{i}")
@@ -292,7 +293,7 @@ if do_search:
             border-radius:12px;padding:16px 18px;margin-top:8px;">
   <div style="color:#818cf8;font-size:0.65rem;font-weight:700;letter-spacing:0.08em;
               text-transform:uppercase;margin-bottom:8px;">✨ Why these songs?</div>
-  <div style="color:#94a3b8;font-size:0.85rem;line-height:1.65;">{result.explanation}</div>
+  <div style="color:#94a3b8;font-size:0.85rem;line-height:1.65;">{html.escape(result.explanation)}</div>
 </div>
 """, unsafe_allow_html=True)
 
