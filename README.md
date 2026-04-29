@@ -1,260 +1,324 @@
-# 🎵 Music Recommender Simulation
+# VibeMatch
+
+An AI-powered music recommender. Describe what you're in the mood for, get a ranked list of songs, and a plain-English explanation of why they fit.
+
+---
+
+## Original Project (Modules 1-3)
+
+This project started as a rules-based music recommender called VibeMatch 1.0, built during Modules 1-3 of the CodePath AI110 course. The original system scored every song in an 18-song catalog against a hardcoded user profile using a weighted formula across six dimensions: genre, mood, energy, acoustic preference, valence, and danceability. It returned the top matches with template-based explanations (e.g., "genre matches your preference (pop)") and ran entirely on explicit numeric preferences with no natural language input, no AI models, and no dynamic explanations. It served as the foundation for understanding content-based filtering before the AI layer was added.
+
+---
 
 ## Project Summary
 
-In this project you will build and explain a small music recommender system.
+VibeMatch accepts a natural language request like *"something chill and low-key for studying late at night"* and returns a ranked list of songs with a human-readable explanation of why they fit.
 
-Your goal is to:
+The problem it solves: most recommenders require users to specify preferences as structured inputs. VibeMatch removes that step by using an LLM to translate free-text into a scoring profile, passing that profile through a deterministic scoring engine, and then using the LLM a second time to write an explanation grounded in the actual song metadata that came back (the RAG step). The result feels conversational but the recommendations are backed by a transparent, auditable scoring algorithm.
 
-- Represent songs and a user "taste profile" as data
-- Design a scoring rule that turns that data into recommendations
-- Evaluate what your system gets right and wrong
-- Reflect on how this mirrors real world AI recommenders
-
-VibeMatch 1.0 scores every song in an 18-song catalog against a user's stated preferences (genre, mood, energy, acoustic preference, positivity, and danceability) using a weighted formula, then returns the top matches with a plain-language explanation of why each song ranked where it did.
+The LLM handles the parts that require language understanding (parsing intent, generating explanations) and the deterministic recommender handles scoring, ranking, and diversity. Both are needed to make the full experience work.
 
 ---
 
-## How The System Works
+## Architecture Overview
 
-Real-world music recommenders use two main strategies. *Collaborative filtering* finds users with similar listening histories and recommends what those users liked. It doesn't need to understand the songs, just patterns in human behavior. *Content-based filtering* analyzes the attributes of songs themselves and finds songs whose characteristics match a user's stated preferences.
+![System Architecture](assets/system-architecture.png)
 
-This system uses **content-based filtering**. Each song is scored against the user's profile using a weighted formula, then songs are ranked by score and the top results are returned.
+### Components
 
-### Song Features
-
-| Feature | Type | Description |
+| Component | File | Role |
 |---|---|---|
-| `genre` | categorical | Style of music (pop, r&b, hip-hop, rock, metal, country, folk, jazz, lofi, electronic, ambient, synthwave, indie pop) |
-| `mood` | categorical | Emotional context (happy, chill, intense, relaxed, focused, moody, romantic, energetic, nostalgic, melancholic, sad) |
-| `energy` | float 0–1 | Intensity level |
-| `valence` | float 0–1 | Musical positivity (high = upbeat, low = melancholic) |
-| `danceability` | float 0–1 | Rhythmic suitability for dancing |
-| `acousticness` | float 0–1 | Acoustic vs. electronic character |
-| `tempo_bpm` | float | Beats per minute (stored, not scored) |
+| User Interface | `app.py` / `src/main.py` | Streamlit web UI and CLI entry points |
+| Input Guardrails | `src/agent.py` | Rejects empty input and requests over 500 characters before any API call |
+| Interpreter | `src/interpreter.py` | Calls `gpt-4o-mini` to parse natural language into an 11-field `user_prefs` dict |
+| Recommender | `src/recommender.py` | Deterministic weighted scoring engine (unchanged from v1) |
+| RAG Retrieval + Explainer | `src/explainer.py` | Serializes top-K song metadata into the LLM context and calls `gpt-4o-mini` for the explanation |
+| Agent | `src/agent.py` | Orchestrates the full pipeline and returns an `AgentResult` without raising exceptions |
+| Evaluator | `src/evaluator.py` | Developer tool that runs 5 test queries and scores output quality via LLM-as-judge |
 
-### User Profile
+### Data flow
 
-| Field | Type | Description |
-|---|---|---|
-| `favorite_genre` | str | Preferred genre |
-| `favorite_mood` | str | Preferred mood context |
-| `target_energy` | float 0–1 | Preferred energy level |
-| `likes_acoustic` | bool | Prefers acoustic over electronic |
-| `target_valence` | float 0–1 | Preferred positivity level (default 0.5) |
-| `target_danceability` | float 0–1 | Preferred danceability level (default 0.5) |
-
-### Algorithm Recipe (Scoring Formula)
-
-Each song receives a weighted compatibility score (max = 1.0):
-
-| Feature | Weight | Formula |
-|---|---|---|
-| Genre match | **30%** | `1.0` if match, `0.0` if not |
-| Mood match | **25%** | `1.0` if match, `0.0` if not |
-| Energy similarity | **20%** | `1.0 - \|song.energy - user.target_energy\|` |
-| Acoustic fit | **10%** | `acousticness` if user likes acoustic, else `1 - acousticness` |
-| Valence similarity | **10%** | `1.0 - \|song.valence - user.target_valence\|` |
-| Danceability similarity | **5%** | `1.0 - \|song.danceability - user.target_danceability\|` |
-
-Songs are sorted highest to lowest by score, and the top `k` are returned with explanations.
-
-### System Diagram
-
-```mermaid
-flowchart TD
-    A([User Profile]) --> B[Load songs.csv]
-    B --> C{For each song}
-    C --> D[Compute weighted score]
-    D --> C
-    C --> E[Sort high to low]
-    E --> F([Top k Recommendations])
+```
+User Input (natural language)
+    |
+Guardrails: reject if empty or > 500 chars
+    |
+Interpreter: gpt-4o-mini -> user_prefs dict (11 fields)
+    |
+Recommender: weighted scoring against songs.csv catalog
+    |
+RAG Retrieval: top-K song metadata injected into prompt
+    |
+Explainer: gpt-4o-mini -> 2-3 sentence explanation
+    |
+Output: ranked song table + explanation (Streamlit or CLI)
+    |
+    +-- (developer tool, run separately)
+        Evaluator: LLM-as-judge -> relevance / diversity / explanation quality scores
 ```
 
-### Potential Biases
-
-- **Genre over-dominance**: genre carries 30% weight, so a near-perfect song in the wrong genre will always rank below a mediocre song in the right genre.
-- **Cold-start limitations**: the system needs explicit preferences; it can't infer taste from behavior.
-- **Binary genre/mood matching**: there are no partial matches (e.g., "pop" and "indie pop" score the same as "pop" and "metal", both zero).
-- **Limited catalog**: 18 songs means some user profiles will get weak recommendations simply because no good match exists.
+The Interpreter and Explainer are the two LLM calls in every user-facing request. The Evaluator adds a third call on the developer side when you run `python -m src.evaluator`.
 
 ---
 
-## Getting Started
+## Setup Instructions
 
-### Setup
+### Prerequisites
 
-1. Create a virtual environment (optional but recommended):
+- Python 3.11+
+- An OpenAI API key
 
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate      # Mac or Linux
-   .venv\Scripts\activate         # Windows
+### 1. Clone and set up the environment
 
-2. Install dependencies
+```bash
+git clone <repo-url>
+cd applied-ai-system-project
+
+python -m venv .venv
+source .venv/bin/activate        # Mac / Linux
+.venv\Scripts\activate           # Windows
+```
+
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Run the app:
+### 3. Configure your API key
+
+```bash
+cp .env.example .env
+```
+
+Open `.env` and set your key:
+
+```
+OPENAI_API_KEY=sk-...
+```
+
+### 4. Run the application
+
+Streamlit UI:
+
+```bash
+streamlit run app.py
+```
+
+Opens at `http://localhost:8501`. Enter a music request and click **Find songs**.
+
+CLI with AI pipeline:
+
+```bash
+python -m src.main --query "upbeat pop for a Friday night out"
+```
+
+CLI without AI (no API key needed):
 
 ```bash
 python -m src.main
 ```
 
-### Running Tests
-
-Run the starter tests with:
+### 5. Run the evaluation suite
 
 ```bash
-pytest
+python -m src.evaluator
 ```
 
-You can add more tests in `tests/test_recommender.py`.
+Runs 5 batch queries through the full pipeline and prints a scored report:
+
+```
+Query                                          Relevance  Diversity  Explanation
+---------------------------------------------  ---------  ---------  -----------
+upbeat pop songs for a morning workout                 4          4            5
+something chill and relaxing for studying              5          3            4
+high energy music for a party                          4          4            4
+feel good dance tracks                                 5          4            5
+intense driving music                                  4          3            4
+
+Averages -- Relevance: 4.4/5  Diversity: 3.6/5  Explanation: 4.4/5
+```
+
+### 6. Run the test suite
+
+```bash
+pytest tests/ -v
+```
+
+All 26 tests pass without a real API key. All OpenAI calls are mocked.
 
 ---
 
-## Experiments You Tried
+## Sample Interactions
 
-Use this section to document the experiments you ran. For example:
+### Example 1: Chill study session
 
-- What happened when you changed the weight on genre from 2.0 to 0.5
-- What happened when you added tempo or valence to the score
-- How did your system behave for different types of users
+**Input:** `"something calm and low-key for studying at night"`
 
----
+Interpreter output:
+```json
+{
+  "genre": "lofi",
+  "mood": "chill",
+  "energy": 0.3,
+  "likes_acoustic": true,
+  "valence": 0.5,
+  "danceability": 0.35
+}
+```
 
-## Limitations and Risks
+Recommender output (top 3 of 5):
 
-Summarize some limitations of your recommender.
+| # | Title | Artist | Genre | Mood | Score |
+|---|---|---|---|---|---|
+| 1 | Midnight Coding | LoRoom | lofi | chill | 0.84 |
+| 2 | Forest Drift | Terra Bloom | ambient | chill | 0.71 |
+| 3 | Quiet Hours | Still Water | lofi | chill | 0.68 |
 
-Examples:
-
-- It only works on a tiny catalog
-- It does not understand lyrics or language
-- It might over favor one genre or mood
-
-You will go deeper on this in your model card.
-
----
-
-## Reflection
-
-Read and complete `model_card.md`:
-
-[**Model Card**](model_card.md)
-
-Write 1 to 2 paragraphs here about what you learned:
-
-- about how recommenders turn data into predictions
-- about where bias or unfairness could show up in systems like this
-
+Explainer output:
+> These tracks are a good fit for a late-night study session. Midnight Coding and Quiet Hours both have the slow, unhurried feel of classic lofi, with low danceability and soft acoustic textures that stay out of the way. Forest Drift brings in some ambient elements while keeping the same calm mood, which adds a bit of variety without changing the overall feeling.
 
 ---
 
-## 7. `model_card_template.md`
+### Example 2: High-energy workout
 
-Combines reflection and model card framing from the Module 3 guidance. :contentReference[oaicite:2]{index=2}  
+**Input:** `"high energy music to push through a workout"`
 
-```markdown
-# 🎧 Model Card - Music Recommender Simulation
+Interpreter output:
+```json
+{
+  "genre": "pop",
+  "mood": "happy",
+  "energy": 0.92,
+  "likes_acoustic": false,
+  "valence": 0.85,
+  "danceability": 0.8
+}
+```
 
-## 1. Model Name
+Recommender output (top 3 of 5):
 
-Give your recommender a name, for example:
+| # | Title | Artist | Genre | Mood | Score |
+|---|---|---|---|---|---|
+| 1 | Sunrise City | Neon Echo | pop | happy | 0.91 |
+| 2 | Hyperdrive | Volt Machine | electronic | happy | 0.79 |
+| 3 | Push It Forward | Crest Wave | pop | energetic | 0.76 |
 
-> VibeFinder 1.0
-
----
-
-## 2. Intended Use
-
-- What is this system trying to do
-- Who is it for
-
-Example:
-
-> This model suggests 3 to 5 songs from a small catalog based on a user's preferred genre, mood, and energy level. It is for classroom exploration only, not for real users.
-
----
-
-## 3. How It Works (Short Explanation)
-
-Describe your scoring logic in plain language.
-
-- What features of each song does it consider
-- What information about the user does it use
-- How does it turn those into a number
-
-Try to avoid code in this section, treat it like an explanation to a non programmer.
+Explainer output:
+> Sunrise City and Push It Forward are high-energy pop tracks with strong danceability and upbeat valence that match the intensity of a workout, both scoring above 0.8 on energy. Hyperdrive adds an electronic edge that keeps the momentum going and prevents the playlist from feeling repetitive over a longer session.
 
 ---
 
-## 4. Data
+### Example 3: Guardrail in action
 
-Describe your dataset.
+**Input:** `""` (empty string)
 
-- How many songs are in `data/songs.csv`
-- Did you add or remove any songs
-- What kinds of genres or moods are represented
-- Whose taste does this data mostly reflect
+**Output:**
+```
+Error: Input cannot be empty.
+```
 
----
-
-## 5. Strengths
-
-Where does your recommender work well
-
-You can think about:
-- Situations where the top results "felt right"
-- Particular user profiles it served well
-- Simplicity or transparency benefits
+No API call is made. The check in `agent.run()` catches this before the interpreter is called.
 
 ---
 
-## 6. Limitations and Bias
+## Design Decisions
 
-Where does your recommender struggle
+### Why gpt-4o-mini for all LLM calls
 
-Some prompts:
-- Does it ignore some genres or moods
-- Does it treat all users as if they have the same taste shape
-- Is it biased toward high energy or one genre by default
-- How could this be unfair if used in a real product
+It hits a reasonable cost/quality balance for what each step needs. Parsing natural language into a JSON dict is straightforward structured extraction and does not need a larger model. Generating a 2-3 sentence explanation benefits from natural writing ability, which `gpt-4o-mini` handles well. Using one model throughout also keeps cost estimation and error handling simple.
 
----
+### Why keep the recommender rules-based and unchanged
 
-## 7. Evaluation
+The scoring engine in `recommender.py` is deterministic and fast. It scores 18 songs in microseconds with no API cost. Replacing it with an LLM ranker would add latency, cost, and unpredictability to a step that does not need language understanding. The hybrid approach works well: the LLM handles free-text input and explanation, and the deterministic engine handles scoring, ranking, and diversity in a way that is easy to inspect and reason about.
 
-How did you check your system
+### RAG design: injecting scored metadata into the explainer prompt
 
-Examples:
-- You tried multiple user profiles and wrote down whether the results matched your expectations
-- You compared your simulation to what a real app like Spotify or YouTube tends to recommend
-- You wrote tests for your scoring logic
+Rather than asking the LLM to recommend songs from scratch, the Explainer receives the songs already selected by the scoring engine, including their attributes and match scores. The LLM writes the explanation based on those facts rather than generating from memory. This keeps the explanation consistent with the actual recommendations and reduces the chance of the model inventing details.
 
-You do not need a numeric metric, but if you used one, explain what it measures.
+### AgentResult never raises
 
----
+`agent.run()` catches all exceptions and returns them as `AgentResult(error=...)`. This keeps the Streamlit UI and the CLI simple: they check `result.error` rather than wrapping calls in try/except. API timeouts and malformed JSON from the interpreter show up as user-facing messages instead of stack traces.
 
-## 8. Future Work
+### LLM-as-judge evaluation as a separate CLI tool
 
-If you had more time, how would you improve this recommender
+The evaluator is a developer tool, not part of the user-facing pipeline. Running a judge on every user request would triple API costs and add latency. Instead it runs on demand against 5 fixed test cases and gives a quick read on system quality without affecting production calls.
 
-Examples:
+### Trade-offs
 
-- Add support for multiple users and "group vibe" recommendations
-- Balance diversity of songs instead of always picking the closest match
-- Use more features, like tempo ranges or lyric themes
+| Decision | Trade-off |
+|---|---|
+| 18-song catalog | Easy to inspect and test, but too small to produce genuinely diverse recommendations |
+| No conversation history | Simpler pipeline and no session state, but users cannot refine a request across turns |
+| `response_format=json_object` | Reliable structured output, but only works with compatible models |
+| Greedy diversity selection | Reduces artist and genre repetition, but may skip a slightly higher-scoring song to do it |
 
 ---
 
-## 9. Personal Reflection
+## Testing Summary
 
-A few sentences about what you learned:
+### What was tested
 
-- What surprised you about how your system behaved
-- How did building this change how you think about real music recommenders
-- Where do you think human judgment still matters, even if the model seems "smart"
+- `test_interpreter.py` (3 tests): mocks the OpenAI client; checks that `interpret()` returns all 11 expected keys, fills missing fields with defaults, and raises `ValueError` on malformed JSON from the LLM.
+- `test_explainer.py` (2 tests): mocks the OpenAI client; checks that `explain()` returns a non-empty string and that song titles and artists appear in the prompt sent to the model.
+- `test_agent.py` (5 tests): mocks `interpret` and `explain`; covers the happy path, empty input, whitespace-only input, the 500-character limit, and that API exceptions come back as `AgentResult.error` without raising.
+- `test_evaluator.py` (3 tests): mocks `run` and the OpenAI judge; checks that `run_eval()` returns an `EvalReport`, that scores are in the 1-5 range, and that averages are computed correctly.
+- `test_recommender.py` (11 tests): the original test suite for the scoring engine. No mocking needed since it is fully deterministic.
 
+### What worked well
+
+All 26 tests pass without a real API key. Setting `OPENAI_API_KEY=test-key` in `tests/conftest.py` before any module is imported handles the import-time API key check in `agent.py` without restructuring the module. Mocking at the `OpenAI` class level rather than at individual method calls keeps the mocks clean and catches initialization failures too.
+
+### Issues encountered
+
+The main testing challenge was the import-time side effect in `agent.py` where it raises if `OPENAI_API_KEY` is not set. Without `conftest.py` setting the env var before test collection, pytest fails to import the module entirely. Once that pattern was in place it worked reliably, but it is easy to miss on the first setup.
+
+### Improvements made
+
+Running the tests surfaced two concrete fixes. First, the conftest.py pattern was necessary: pytest failed to collect tests at all until `OPENAI_API_KEY` was set before imports, so adding `os.environ.setdefault("OPENAI_API_KEY", "test-key")` to `conftest.py` unblocked the entire suite. Second, early evaluator runs with no diversity logic returned multiple songs by the same artist on genre-heavy queries, which scored consistently lower on the diversity dimension. That feedback drove adding the greedy penalty step to `recommend_songs`, and diversity scores improved in subsequent evaluator runs.
+
+### Limitations
+
+- Tests mock the LLM completely, so they verify control flow and data handling but not output quality.
+- There are no integration tests against the real API. The evaluator fills that role when run manually.
+- The 18-song catalog means some queries will get weak recommendations simply because no close match exists in the data.
+
+---
+
+## Reflection and Ethics
+
+### Limitations and Biases
+
+The biggest limitation is the 18-song catalog. It validates that the pipeline works end to end, but it is not large enough to produce recommendations that feel genuinely useful. Many queries return a best-available match rather than an actual match, and the explainer writes convincing prose for whatever the recommender returns. Nothing in the pipeline signals when match quality is poor, which is the core reliability risk.
+
+The scoring weights are hand-tuned rather than learned from data. A genre match counting for 30% of the total score is an assumption, not a measured result, and those weights may not generalize across users or query types.
+
+The interpreter is sensitive to how gpt-4o-mini reads ambiguous input. A request like "acoustic but upbeat" reliably sets likes_acoustic=True but often also sets energy low, because the model associates "acoustic" with quieter music. There is no mechanism to detect or correct that drift short of inspecting interpreter output individually.
+
+The LLM-as-judge evaluator has a grade inflation problem. Scores cluster around 4-5 on a 5-point scale, which makes it difficult to detect genuine quality drops. At larger scale you would want human review on a sample alongside the automated scores.
+
+### Misuse and Safety
+
+The primary misuse risk is prompt injection. The 500-character limit makes sustained attacks harder, but nothing in the pipeline filters for adversarial content within that limit. A query structured to manipulate the interpreter reaches gpt-4o-mini unchanged. The model is unlikely to comply given how the system prompt is written, but there is no explicit defense.
+
+The explainer is grounded in song metadata, so the risk of hallucinated song facts is low. But the generated prose is presented without confidence scores or caveats. Users have no signal for whether a phrase like "these tracks share a soft acoustic texture" is drawn from attribute data or is the model producing plausible-sounding language.
+
+There is no rate limiting or budget cap. Repeated queries or multiple evaluator runs accumulate API costs with no guardrail. In a production context this would need per-user rate limiting and a spend ceiling.
+
+Safeguards already in place: the 500-character input limit, AgentResult error handling that prevents stack traces from reaching users, and `json_object` response format that prevents malformed interpreter output from breaking downstream steps. Missing: content filtering on input, confidence signaling on output, and any mechanism to flag when catalog matches are weak.
+
+### Reliability and Testing Insights
+
+Building the AI layer made clear that the LLM works best at the edges of the system. The interpreter handles input translation and the explainer handles output generation. The deterministic scoring engine handles everything in between. That split made the system easier to test and debug than it would have been with the LLM involved in ranking too.
+
+The most useful reliability discovery was how much `response_format={"type": "json_object"}` changed interpreter behavior. Without it, even well-crafted prompts would occasionally return JSON wrapped in markdown fences or prose with JSON embedded, both of which break `json.loads()`. Adding the constraint eliminated that failure class entirely.
+
+The RAG step mattered more than expected. An early version of the explainer prompt just said "explain why these five songs are good" without including the actual attributes. The results were vague and sometimes wrong. Once the prompt included the actual metadata, scores, and match reasons, the explanations became specific and grounded. The model does not need prior knowledge of the songs; it just needs the relevant facts in context.
+
+The harder failure mode was silent: queries for genres not in the catalog (like "classical" or "metal") produce structurally normal output through every pipeline stage. The recommender returns its best available matches, the explainer writes convincing prose, and the evaluator may score it reasonably. Nothing surfaces the weak fit without manual inspection of actual outputs.
+
+### Collaboration With AI During Development
+
+One genuinely helpful contribution was the AgentResult never-raises design pattern. The suggestion to catch all exceptions inside `agent.run()` and return them as `AgentResult(error=...)` rather than propagating them outward kept both the Streamlit UI and the CLI simple. Both check `result.error` rather than wrapping every call in try/except. It came with the reasoning attached, which made it easy to evaluate before adopting.
+
+One flawed contribution was a factual error in the system architecture diagram. An early draft labeled the songs.csv data source as "700+ tracks" when the actual catalog has 18 songs. That number was not in any source file; it was generated as a plausible-sounding detail and made it into the diagram before being caught. This is a concrete example of a hallucination that looks reasonable in context. The fix was straightforward once identified, but it confirms that AI-generated documentation needs the same verification as AI-generated code. Any specific claim about the system (counts, thresholds, model names, file sizes) should be checked against the source rather than trusted from generated output.
