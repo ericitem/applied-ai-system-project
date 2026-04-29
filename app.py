@@ -12,7 +12,7 @@ def _hex_to_rgb(hex_color: str) -> str:
 st.set_page_config(
     page_title="VibeMatch",
     page_icon="🎵",
-    layout="centered",
+    layout="wide",
     initial_sidebar_state="collapsed",
 )
 
@@ -20,13 +20,22 @@ st.markdown("""
 <style>
 .stApp { background-color: #0f172a; color: #e2e8f0; }
 #MainMenu, footer, header { visibility: hidden; }
+
+/* Kill sidebar */
+section[data-testid="stSidebar"],
+[data-testid="collapsedControl"] { display: none !important; }
+
+/* Center content within full-width layout */
 .block-container {
     padding-top: 0 !important;
-    max-width: 680px !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    max-width: 760px !important;
+    margin: 0 auto !important;
     padding-bottom: 3rem !important;
 }
-section[data-testid="stSidebar"] { display: none; }
 
+/* Search input */
 .stTextInput > div > div > input {
     background-color: rgba(255,255,255,0.07) !important;
     border: 1px solid rgba(255,255,255,0.12) !important;
@@ -42,6 +51,7 @@ section[data-testid="stSidebar"] { display: none; }
 }
 .stTextInput label { display: none; }
 
+/* Find Songs primary button */
 .stButton > button[kind="primary"] {
     background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
     border: none !important;
@@ -50,23 +60,30 @@ section[data-testid="stSidebar"] { display: none; }
     font-weight: 700 !important;
     padding: 10px !important;
     font-size: 0.9rem !important;
+    letter-spacing: 0.02em !important;
 }
 .stButton > button[kind="primary"]:hover { opacity: 0.88 !important; }
 
+/* All secondary buttons */
 .stButton > button {
-    background: rgba(255,255,255,0.05) !important;
-    border: 1px solid rgba(255,255,255,0.1) !important;
+    background: rgba(99,102,241,0.1) !important;
+    border: 1px solid rgba(99,102,241,0.28) !important;
     border-radius: 20px !important;
-    color: #94a3b8 !important;
-    font-size: 0.78rem !important;
-    padding: 4px 12px !important;
+    color: #a5b4fc !important;
+    font-size: 0.76rem !important;
+    padding: 5px 14px !important;
+    white-space: nowrap !important;
+    transition: all 0.15s ease !important;
+    min-height: 36px !important;
+    line-height: 1.2 !important;
 }
 .stButton > button:hover {
-    background: rgba(99,102,241,0.2) !important;
-    border-color: rgba(99,102,241,0.4) !important;
-    color: #a5b4fc !important;
+    background: rgba(99,102,241,0.25) !important;
+    border-color: rgba(99,102,241,0.55) !important;
+    color: #e0e7ff !important;
 }
 
+/* Expanders */
 .streamlit-expanderHeader {
     background: rgba(255,255,255,0.04) !important;
     border: 1px solid rgba(255,255,255,0.08) !important;
@@ -80,6 +97,12 @@ section[data-testid="stSidebar"] { display: none; }
     border-top: none !important;
     border-radius: 0 0 8px 8px !important;
     padding: 10px 14px !important;
+}
+
+/* Tighten column gaps */
+[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+    padding-left: 4px !important;
+    padding-right: 4px !important;
 }
 
 .stSpinner > div { border-top-color: #6366f1 !important; }
@@ -96,12 +119,12 @@ if "query_input" not in st.session_state:
 
 st.markdown("""
 <div style="background:linear-gradient(135deg,#1e1b4b 0%,#312e81 100%);
-            padding:28px 24px 20px;text-align:center;
-            margin:-1rem -1rem 1.5rem;
-            border-bottom:1px solid rgba(255,255,255,0.08);">
-  <div style="font-size:2.2rem;margin-bottom:6px;">🎵</div>
-  <div style="color:#e0e7ff;font-size:1.5rem;font-weight:800;letter-spacing:0.04em;">VibeMatch</div>
-  <div style="color:#818cf8;font-size:0.82rem;margin-top:5px;">Describe your mood · Get your songs</div>
+            padding:32px 24px 24px;text-align:center;
+            border-radius:16px;margin-bottom:24px;
+            border:1px solid rgba(255,255,255,0.08);">
+  <div style="font-size:2.4rem;margin-bottom:8px;">🎵</div>
+  <div style="color:#e0e7ff;font-size:1.6rem;font-weight:800;letter-spacing:0.04em;">VibeMatch</div>
+  <div style="color:#818cf8;font-size:0.85rem;margin-top:6px;opacity:0.9;">Describe your mood · Get your songs</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -111,7 +134,7 @@ MOOD_PILLS = [
     ("🎉 Party",            "upbeat party songs"),
     ("📚 Study",            "calm focused music for studying"),
     ("💔 Sad",              "melancholic and emotional songs"),
-    ("🚗 Late Night Drive", "moody late night driving music"),
+    ("🚗 Night Drive",      "moody late night driving music"),
     ("☀️ Morning",          "uplifting morning feel-good songs"),
     ("🔥 Hype",             "intense hype music to get pumped up"),
 ]
@@ -145,15 +168,17 @@ GENRE_EMOJI = {
 }
 
 st.markdown(
-    '<p style="color:#475569;font-size:0.65rem;font-weight:700;'
-    'letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">'
+    '<p style="color:#64748b;font-size:0.65rem;font-weight:700;'
+    'letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">'
     'Quick picks</p>',
     unsafe_allow_html=True,
 )
-pill_cols = st.columns(4)
+pill_row1 = st.columns(4, gap="small")
+pill_row2 = st.columns(4, gap="small")
 for idx, (label, pill_query) in enumerate(MOOD_PILLS):
-    with pill_cols[idx % 4]:
-        if st.button(label, key=f"pill_{idx}"):
+    col = pill_row1[idx] if idx < 4 else pill_row2[idx - 4]
+    with col:
+        if st.button(label, key=f"pill_{idx}", use_container_width=True):
             st.session_state["prefill"] = pill_query
             st.rerun()
 
