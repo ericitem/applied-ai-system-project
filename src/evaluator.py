@@ -53,7 +53,11 @@ def _judge(query: str, result: AgentResult) -> dict:
         ],
         response_format={"type": "json_object"},
     )
-    return json.loads(response.choices[0].message.content)
+    raw = response.choices[0].message.content
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"evaluator: invalid JSON from judge LLM: {exc!r}\nRaw: {raw}") from exc
 
 
 def run_eval(test_cases: list) -> EvalReport:
@@ -65,7 +69,13 @@ def run_eval(test_cases: list) -> EvalReport:
             results.append({"query": query, "error": agent_result.error,
                             "relevance": 0, "diversity": 0, "explanation_quality": 0})
             continue
-        scores = _judge(query, agent_result)
+        try:
+            scores = _judge(query, agent_result)
+        except Exception as exc:
+            logger.error("evaluator: judge failed for query=%r: %s", query[:40], exc)
+            results.append({"query": query, "error": f"Judge error: {exc}",
+                            "relevance": 0, "diversity": 0, "explanation_quality": 0})
+            continue
         results.append({"query": query, **scores})
 
     valid = [r for r in results if "error" not in r]
